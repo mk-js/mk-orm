@@ -1,10 +1,12 @@
-function constructor(config, tableData) {
+function constructor(config, tableData, views) {
     this.name = config.name
     this.config = config
     this.db = initDatabse(config)
+    this.views = views
     this.models = {
         toService,
         db: () => this.db,
+        views: (name) => this.views[name],
         config,
         executeSql,
         initModelByData,
@@ -31,7 +33,7 @@ function initModelByData(name, data) {
     //create table
     this.crateTable(name, model._fields)
     //insert data 
-    data.forEach(d => model.delete(d))
+    data.forEach(d => model.delete({ id: d.id }))
     data.forEach(d => model.create(d))
 
     return model
@@ -46,13 +48,47 @@ function crateTable(name, fields) {
     var sql = 'create table if not exists ' + name + '(' + fields.join(',') + ')';
     this.executeSql(sql)
 }
-
+// let v = {
+//     fields: '*',
+//     menuOperationList: {
+//         name: 'menuOperation',
+//         fields: '*',
+//         where: {
+//             menuId: '$id',
+//             roleId: 0
+//         }
+//     }
+// }
 const modelCls = {
-    query: async function (obj) {
-        obj = obj || {}
-        let where = ' where ' + Object.keys(obj).map(k => k + " = ?").join(' and ')
-        let values = Object.values(obj)
-        let sql = 'SELECT * FROM ' + this.name + ';';
+    view: async function (viewName, whereObj) {
+        viewName = viewName || this.name
+        let view = this.models.views(viewName)
+        let values = await this.query({ fields: view.fields, where: whereObj })
+        values.forEach(async v => {
+            Object.keys(view).filter(k => k != 'fields').forEach(async k => {
+                let { name, fields, where } = view[k]
+                let curWhere = Object.assign({}, where)
+                Object.keys(curWhere).forEach(w => {
+                    let wherevalue = curWhere[w]
+                    if (wherevalue && wherevalue.indexOf && wherevalue.indexOf('$') == 0) {
+                        let relateField = wherevalue.substr(1)
+                        curWhere[w] = v[relateField]
+                    }
+                })
+                v[k] = await this.models[name].query({ fields: fields, where: curWhere })
+            })
+        })
+        return values
+    },
+    query: async function (options) {
+        let whereObj = options && options.where || options || {}
+        let where = ' where ' + Object.keys(whereObj).map(k => k + " = ?").join(' and ')
+        if (Object.keys(whereObj).length == 0) {
+            where = ''
+        }
+        let fields = options && options.fields || '*'
+        let values = Object.values(whereObj)
+        let sql = 'SELECT ' + fields + ' FROM ' + this.name + where + ';';
         let result = await this.models.executeSql(sql, values)
         return result
     },
@@ -63,17 +99,14 @@ const modelCls = {
         let result = await this.models.executeSql(sql, values)
         return result
     },
-    update: async function (obj, whereObj) {
-        obj = obj || {}
-        if (!obj.id && !whereObj) {
-            return
-        }
-        whereObj = whereObj || {}
+    update: async function (values, options) {
+        let whereObj = options && options.where || values && values.id && { id: values.id } || { '1': '1' }
+        let setFields = Object.keys(values)
         let where = ' where ' + Object.keys(whereObj).map(k => k + " = ?").join(' and ')
-        let set = ' set ' + Object.keys(obj).map(k => k + ' = ?').join(', ')
-        let values = Object.value(obj).concat(Object.values(whereObj))
+        let set = ' set ' + setFields.map(k => k + ' = ?').join(', ')
+        let arrValues = Object.values(values).concat(Object.values(whereObj))
         var sql = 'UPDATE ' + this.name + set + where + ';';
-        let result = await this.models.executeSql(sql, values)
+        let result = await this.models.executeSql(sql, arrValues)
         return result
     },
     delete: async function (obj) {
@@ -126,7 +159,7 @@ function serviceWrapper(services, server) {
         Object.keys(obj).forEach(name => {
             let fun = obj[name]
             if (!fun || typeof fun != 'function') return;
-            service[name] = async function () { 
+            service[name] = async function () {
                 // console.log(name + ':' + arguments)
                 try {
                     let value = await obj[name](...arguments)
