@@ -1,0 +1,29 @@
+{
+  "name": "mk-orm",
+  "version": "1.0.5",
+  "description": "支持WebSQL，全栈开发",
+  "main": "./lib/index.js",
+  "scripts": {
+    "compile": "babel -d lib/ src/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mk-js/mk-orm.git"
+  },
+  "author": "LI Shengguo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mk-js/mk-orm/issues"
+  },
+  "homepage": "https://github.com/mk-js/mk-orm#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1"
+  }
+}
