@@ -33,8 +33,10 @@ function initModelByData(name, data) {
     //create table
     this.crateTable(name, model._fields)
     //insert data 
-    data.forEach(d => model.delete({ id: d.id }))
-    data.forEach(d => model.create(d))
+    data.forEach(async d => {
+        await model.delete({ id: d.id })
+        await model.create(d)
+    })
 
     return model
 }

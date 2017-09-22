@@ -5,9 +5,11 @@ const models = dbProvider && new dbProvider(
     {
         role: [
             { id: 10, name: '管理员' },
+            { id: 10, name: '管理员' },
             { id: 20, name: '用户' },
         ],
         menu: [
+            { id: 20, name: '个人设置' },
             { id: 20, name: '个人设置' },
             { id: 21, name: '用户管理' },
         ],

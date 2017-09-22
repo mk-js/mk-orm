@@ -1,6 +1,6 @@
 {
   "name": "mk-orm",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "支持WebSQL，全栈开发",
   "main": "./lib/index.js",
   "scripts": {
